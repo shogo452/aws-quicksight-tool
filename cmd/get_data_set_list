@@ -1,0 +1,180 @@
+#! /usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'json'
+require 'optparse'
+require 'time'
+require 'csv'
+require_relative '../modules/quicksight/list_namespaces'
+require_relative '../modules/quicksight/list_data_sets'
+require_relative '../modules/quicksight/describe_data_set'
+require_relative '../modules/quicksight/describe_data_set_permissions'
+
+class GetDataSetList
+  PREFIX_FOR_DEFAULT = "staging-".freeze # To change according to own numbering rule.
+  DATA_SET_ID_PATTERN = /\w{8}-\w{4}-\w{4}-\w{4}-\w{12}/
+
+  def initialize
+    option = CmdOptionParser.new.execute
+    @profile = option.profile
+    @namespace = option.namespace
+    @only_named = option.only_named.nil? ? false : true
+    @namespaces = []
+    @data_set_ids = []
+    @filtered_data_set_ids = []
+    @data_sets = []
+    @rows = []
+    @checked_data_set_ids = []
+  end
+
+  def filter_by_namespace # To change according to own numbering rule.
+    @namespace == "default" ? prefix = PREFIX_FOR_DEFAULT : prefix = prefix_with_namespace
+    @data_set_ids.filter! { |ds_id| ds_id.start_with?(prefix) || ds_id =~ DATA_SET_ID_PATTERN}
+  end
+
+  def prefix_with_namespace
+    "#{@namespace}-" # To change according to own numbering rule.
+  end
+
+  def reject_unnamed_data_sets
+    @data_set_ids.reject! { |ds_id| ds_id =~ DATA_SET_ID_PATTERN }
+  end
+
+  def execute
+    puts 'Started to get data set lists.'
+    puts 'Wait to list namespaces...'
+    resp_list_namespaces = Quicksight::ListNamespaces.new(@profile).execute
+    @namespaces = resp_list_namespaces["Namespaces"].map { |ns| ns["Name"] }
+    puts 'Done to list namespaces.'
+
+    puts 'Wait to list data sets...'
+    resp_list_data_sets = Quicksight::ListDataSets.new(@profile).execute
+    @data_set_ids = resp_list_data_sets["DataSetSummaries"].map { |ds| ds["DataSetId"]}
+    reject_unnamed_data_sets if @only_named
+    filter_by_namespace unless @namespace.nil?
+    puts 'Done to list data set.'
+
+    puts "Start to desctribe data sets and its permissions"
+    @data_set_ids.each_with_index do |ds_id, i|
+      puts "Wait to check data_set_id: #{ds_id}... (#{i+1}/#{@data_set_ids.size})"
+      permissioned_to_default = false
+      resp_describe_ds = Quicksight::DescribeDataSet.new(@profile, ds_id).execute
+
+      if !resp_describe_ds.nil?
+        resp_describe_ds_permissions = Quicksight::DescribeDataSetPermissions.new(@profile, ds_id).execute
+      else
+        resp_describe_ds_permissions = nil
+      end
+
+      if !resp_describe_ds_permissions.nil?
+        permissioned_namespaces = resp_describe_ds_permissions["Permissions"].map { |p| p["Principal"].split('/')[1] }
+        permissioned_namespaces.uniq!
+        if permissioned_namespaces.include?("default") &&  permissioned_namespaces.size == 1
+          permissioned_to_default = true
+        elsif permissioned_namespaces.include?("default")
+          permissioned_to_default = true
+          permissioned_namespaces.delete("default")
+        end
+      else
+        permissioned_namespaces = nil
+      end
+
+      if !resp_describe_ds.nil? && !resp_describe_ds_permissions.nil?
+        permissioned_namespaces.each do |ns|
+          next if !@namespace.nil? && @namespace != ns
+
+          @rows << [
+            ns,
+            ds_id,
+            resp_describe_ds["DataSet"]["Name"],
+            "#{convert_gigabytes(resp_describe_ds["DataSet"]["ConsumedSpiceCapacityInBytes"]).to_f.round(6)}[GB]",
+            permissioned_to_default ? "✅" : "-",
+            Time.parse(resp_describe_ds["DataSet"]["CreatedTime"]).strftime("%F %H:%M:%S"),
+            Time.parse(resp_describe_ds["DataSet"]["LastUpdatedTime"]).strftime("%F %H:%M:%S")
+          ]
+          @checked_data_set_ids << ds_id
+        end
+      elsif !resp_describe_ds_permissions.nil?
+        @rows << [
+          nil,
+          ds_id,
+          resp_describe_ds["DataSet"]["Name"],
+          "#{convert_gigabytes(resp_describe_ds["DataSet"]["ConsumedSpiceCapacityInBytes"]).to_f.round(6)}[GB]",
+          permissioned_to_default ? "✅" : "-",
+          Time.parse(resp_describe_ds["DataSet"]["CreatedTime"]).strftime("%F %H:%M:%S"),
+          Time.parse(resp_describe_ds["DataSet"]["LastUpdatedTime"]).strftime("%F %H:%M:%S")
+        ]
+      else
+        @rows << [ "Error", ds_id, "Error", "Error", "-", "Error", "Error"]
+      end
+      puts "Done to check data_set_id: #{ds_id}. (#{i+1}/#{@data_set_ids.size})"
+    end
+
+    puts 'Wait to generate csv file...'
+    columns_names = %w(namespace data_set_id data_set_name spice_capacity permissions_to_default created_at last_updated_at)
+
+    CSV.open('outputs/ListDataSets.csv', 'w', quote_char: "") do |csv|
+      csv << columns_names
+      @rows.map { |row| csv << row }
+    end
+    puts 'Done to generate csv file.'
+
+    puts 'Wait to generate txt file...'
+    file = File.open("outputs/ListDataSetNames.txt", "w")
+    @checked_data_set_ids.each do |id|
+      file.puts("'#{id}',\n")
+    end
+    file.close
+    puts 'Done to generate txt file.'
+    puts 'Completed to get data set lists.'
+  end
+
+  private
+
+  def convert_gigabytes(bytes)
+    bytes.fdiv(1024 * 1024 * 1024)
+  end
+end
+
+class CmdOptionParser
+  Option = Struct.new(:profile, :only_named, :namespace)
+
+  def initialize
+    @option = Option.new
+  end
+
+  def execute
+    ::OptionParser.new do |o|
+      o.on('-p', '--profile PROFILE_NAME', 'AWS profile name (Required)') { |v| option.profile = v }
+      o.on('-on', '--only-named', 'only named datasets (Optional, default: false)') { |v| option.only_named = true }
+      o.on('-n', '--namespace NAMESPACE', 'Namespace (Optional)') { |v| option.namespace = v }
+      o.on('-h', '--help', 'Show help.') do |_v|
+        puts o
+        exit
+      end
+      o.banner = 'Usage: To get data set lists on AWS QuickSight'
+      o.parse!(ARGV)
+
+      return @option if valid?
+
+      warn 'profile is required.'
+      puts o.help
+      exit(1)
+    end
+  end
+
+  private
+
+  attr_reader :option
+
+  def valid?
+    unless option.profile
+      warn 'profile is missing.'
+      exit(1)
+    end
+
+    true
+  end
+end
+
+GetDataSetList.new.execute
