@@ -122,7 +122,7 @@ class GetDataSetList
     puts 'Wait to generate txt file...'
     file = File.open("outputs/ListDataSetNames.txt", "w")
     @checked_data_set_ids.each do |id|
-      file.puts("'#{id}',\n")
+      file.puts("'#{id}'\n")
     end
     file.close
     puts 'Done to generate txt file.'
