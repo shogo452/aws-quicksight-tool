@@ -25,6 +25,9 @@ module Quicksight
       end
 
       resp
+    rescue StandardError => e
+      puts "===== Command failed: aws quicksight describe-data-set-permissions, data_set_id: #{@data_set_id}, error: #{e}  ====="
+      return nil
     end
   end
 end

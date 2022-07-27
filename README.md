@@ -16,25 +16,28 @@ It can output a CSV listing of QuickSight data sets by namespace, and the spice 
 
 ### Setting Environment Variables
 
-```txt
-vim .zshrc
-```
+* [AWS CLI の名前付きプロファイル](https://docs.aws.amazon.com/ja_jp/cli/latest/userguide/cli-configure-profiles.html)を設定してください。
+* AWSのアカウント情報を環境変数に設定してください。
 
-```
-# .zshrc
+  ```txt
+  vim .zshrc
+  ```
 
-export QA_TOOL_AWS_REGION={REGION}
-export QA_TOOL_AWS_ACCOUNT_ID={AWS_ACCOUNT_ID}
-```
+  ```
+  # .zshrc
 
-```txt
-source .zshrc
-```
+  export QA_TOOL_AWS_REGION={REGION}
+  export QA_TOOL_AWS_ACCOUNT_ID={AWS_ACCOUNT_ID}
+  ```
+
+  ```txt
+  source .zshrc
+  ```
 
 ### Applying an own naming rules
 
 * データセットが属している名前空間を識別するためにデータセットIDに任意で付番を行っている場合は、その付番ルールをスクリプトに反映してください。
-* 命名ルール例
+* 付番ルールの例
   * defaultの名前空間:ステージング環境用として区別するために接頭語「staging-」を使用。
   * マルチテナント別の名前空間：接頭語「tenant-1-」を使用。
 * 名前空間を利用していないかつ独自の付番ルールが無い場合は、特に対応不要です。
