@@ -1,6 +1,6 @@
-# quicksight-tool
+# aws-quicksight-tool
 
-quicksight-toolは、AWS QuickSightのCLIを補助するためのツールです。
+aws-quicksight-toolは、AWS QuickSightのCLIを補助するためのツールです。
 名前空間別のデータセット一覧をCSV出力することができます。またデータセット別のSPICE使用量を一覧化できます。
 
 quicksight-tool assists in the use of the AWS QuickSight CLI.
