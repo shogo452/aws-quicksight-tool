@@ -8,9 +8,9 @@ It can output a CSV listing of QuickSight data sets by namespace, and the spice 
 ### Prerequisites
 
 * Import Mode of Dataset：SPICE
-* Datasets are created with datasource and supported the Describe Data Set API
-  * Examples of available data sources：Aurora, Athena etc.(CSV is not supported as of 2022/7/24.)
-
+* Datasets are created with datasource of Aurora or Athena etc. and supported the Describe Data Set API
+  * DatasourceCSV is not supported as of 2022/7/24.
+  
 ### Setting Environment Variables
 
 * To Set [named profiles for the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html)
@@ -44,8 +44,15 @@ It can output a CSV listing of QuickSight data sets by namespace, and the spice 
 ### Command
 
 ```txt
-cmd/get_data_set_list --profile=<profile>
-(cmd/get_data_set_list -p <profile>)
+$ cmd/get_data_set_list -h
+Usage: To get data set lists on AWS QuickSight
+    -p, --profile PROFILE_NAME       AWS profile name (Required)
+    -o, --only-namedn                only named datasets (Optional, default: false)
+    -n, --namespace NAMESPACE        Namespace (Optional)
+    -h, --help                       Show help.
+
+$ cmd/get_data_set_list --profile=<profile>
+($ cmd/get_data_set_list -p <profile>)
 ```
 
 ### Outputs
