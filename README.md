@@ -1,23 +1,20 @@
 # aws-quicksight-tool
 
-aws-quicksight-toolは、AWS QuickSightのCLIを補助するためのツールです。
-名前空間別のデータセット一覧をCSV出力することができます。またデータセット別のSPICE使用量を一覧化できます。
-
-quicksight-tool assists in the use of the AWS QuickSight CLI.
+aws-quicksight-tool assists in the use of the AWS QuickSight CLI.
 It can output a CSV listing of QuickSight data sets by namespace, and the spice capacity of each data set.
 
 ## Prerequisites and Preparation
 
 ### Prerequisites
 
-* データセットのインポートモード：SPICE
-* QuickSightのCLIのdescribe-data-setを利用できるデータソースを利用したデータセット群
-  * 利用可能なデータソースの例：Aurora, Athenaなど(CSVは2022/7/24時点で対応していない。)
+* Import Mode of Dataset：SPICE
+* Datasets are created with datasource and supported the Describe Data Set API
+  * Examples of available data sources：Aurora, Athena etc.(CSV is not supported as of 2022/7/24.)
 
 ### Setting Environment Variables
 
-* [AWS CLI の名前付きプロファイル](https://docs.aws.amazon.com/ja_jp/cli/latest/userguide/cli-configure-profiles.html)を設定してください。
-* AWSのアカウント情報を環境変数に設定してください。
+* To Set [named profiles for the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html)
+* To set your AWS account credentials in environment variables.
 
   ```txt
   vim .zshrc
@@ -36,11 +33,11 @@ It can output a CSV listing of QuickSight data sets by namespace, and the spice 
 
 ### Applying an own naming rules
 
-* データセットが属している名前空間を識別するためにデータセットIDに任意で付番を行っている場合は、その付番ルールをスクリプトに反映してください。
-* 付番ルールの例
-  * defaultの名前空間:ステージング環境用として区別するために接頭語「staging-」を使用。
-  * マルチテナント別の名前空間：接頭語「tenant-1-」を使用。
-* 名前空間を利用していないかつ独自の付番ルールが無い場合は、特に対応不要です。
+* If you have arbitrarily numbered the dataset ID to identify the namespace to which the dataset belongs, to reflect the numbering rule in the script.
+* Example of a numbering rule
+  * default namespace: use the prefix "staging-" to distinguish it for staging environments.
+  * Multi-tenant separate namespace: use the prefix such as "tenant-1-".
+* If you do not use namespaces and do not have your own numbering rules, you do not need to take any special action.
 
 ## Usage
 
@@ -55,7 +52,7 @@ cmd/get_data_set_list --profile=<profile>
 
 #### **outputs/ListDataSets.csv**
 
-以下のようなリストが出力されます。
+The following list is output.
 
 |namespace|data_set_id|data_set_name|spice_capacity|permissions_to_default|created_at|last_updated_at|
 |:----|:----|:----|:----|:----|:----|:----|
@@ -65,7 +62,7 @@ cmd/get_data_set_list --profile=<profile>
 
 #### **outputs/ListDataSetNames.txt**
 
-以下のように出力対象になったデータセットIDの文字列もテキストファイルで出力されます。シェルスクリプトなどの一括処理などに利用ください。
+The string of the data set ID targeted for output is also output as a text file as shown below. Please use it for batch processing in shell scripts, etc.
 
 ```txt
 'data_set_id_1',
@@ -77,7 +74,7 @@ cmd/get_data_set_list --profile=<profile>
 
 ### --namespace
 
-特定の名前空間にpermissionsが付与されているデータセットを一覧化したい場合に利用。
+To use when you want to list data sets that have been given permissions in a specific namespace.
 
 ```txt
 cmd/get_data_set_list --profile=<profile> --namespace=tenant1
@@ -86,7 +83,7 @@ cmd/get_data_set_list --profile=<profile> --namespace=tenant1
 
 ### --only-named
 
-独自の付番規則でデータセットIDが付番されているデータセットを一覧化したい場合に利用。
+To use when you want to list data sets whose data set IDs are numbered with your own numbering rules.
 
 ```txt
 cmd/get_data_set_list --profile=<profile> --only-named
