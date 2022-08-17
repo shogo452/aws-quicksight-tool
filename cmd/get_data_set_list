@@ -146,7 +146,7 @@ class CmdOptionParser
   def execute
     ::OptionParser.new do |o|
       o.on('-p', '--profile PROFILE_NAME', 'AWS profile name (Required)') { |v| option.profile = v }
-      o.on('-on', '--only-named', 'only named datasets (Optional, default: false)') { |v| option.only_named = true }
+      o.on('-o', '--only-named', 'only named datasets (Optional, default: false)') { |v| option.only_named = true }
       o.on('-n', '--namespace NAMESPACE', 'Namespace (Optional)') { |v| option.namespace = v }
       o.on('-h', '--help', 'Show help.') do |_v|
         puts o
