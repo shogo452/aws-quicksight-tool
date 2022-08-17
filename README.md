@@ -47,7 +47,7 @@ It can output a CSV listing of QuickSight data sets by namespace, and the spice 
 cmd/get_data_set_list -h
 Usage: To get data set lists on AWS QuickSight
     -p, --profile PROFILE_NAME       AWS profile name (Required)
-    -o, --only-namedn                only named datasets (Optional, default: false)
+    -o, --only-named                 only named datasets (Optional, default: false)
     -n, --namespace NAMESPACE        Namespace (Optional)
     -h, --help                       Show help.
 
