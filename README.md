@@ -52,7 +52,6 @@ Usage: To get data set lists on AWS QuickSight
     -h, --help                       Show help.
 
 cmd/get_data_set_list --profile=<profile>
-($ cmd/get_data_set_list -p <profile>)
 ```
 
 ### Outputs
@@ -85,7 +84,6 @@ To use when you want to list data sets that have been given permissions in a spe
 
 ```txt
 cmd/get_data_set_list --profile=<profile> --namespace=tenant1
-(cmd/get_data_set_list -p <profile> -n tenant1)
 ```
 
 ### --only-named
@@ -94,5 +92,4 @@ To use when you want to list data sets whose data set IDs are numbered with your
 
 ```txt
 cmd/get_data_set_list --profile=<profile> --only-named
-(cmd/get_data_set_list -p <profile> -on)
 ```
