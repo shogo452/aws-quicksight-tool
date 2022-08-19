@@ -9,8 +9,8 @@ It can output a CSV listing of QuickSight data sets by namespace, and the spice 
 
 * Import Mode of Dataset：SPICE
 * Datasets are created with datasource of Aurora or Athena etc. and supported the Describe Data Set API
-  * DatasourceCSV is not supported as of 2022/7/24.
-  
+  * Datasource based on CSV is not supported as of 2022/7/24.
+
 ### Setting Environment Variables
 
 * To Set [named profiles for the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html)
@@ -23,8 +23,8 @@ It can output a CSV listing of QuickSight data sets by namespace, and the spice 
   ```
   # .zshrc
 
-  export QA_TOOL_AWS_REGION={REGION}
-  export QA_TOOL_AWS_ACCOUNT_ID={AWS_ACCOUNT_ID}
+  export QS_TOOL_AWS_REGION={REGION}
+  export QS_TOOL_AWS_ACCOUNT_ID={AWS_ACCOUNT_ID}
   ```
 
   ```txt

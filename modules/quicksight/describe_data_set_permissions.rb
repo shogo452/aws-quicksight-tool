@@ -8,11 +8,11 @@ module Quicksight
     def execute
       if @profile == "ngydv"
         resp = `aws quicksight describe-data-set-permissions \
-        --aws-account-id #{ENV['QA_TOOL_AWS_ACCOUNT_ID']} \
+        --aws-account-id #{ENV['QS_TOOL_AWS_ACCOUNT_ID']} \
         --data-set-id #{@data_set_id}`
       else
         resp = `aws quicksight describe-data-set-permissions \
-        --aws-account-id #{ENV['QA_TOOL_AWS_ACCOUNT_ID']} \
+        --aws-account-id #{ENV['QS_TOOL_AWS_ACCOUNT_ID']} \
         --data-set-id #{@data_set_id} \
         --profile #{@profile}`
       end
