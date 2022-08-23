@@ -54,7 +54,7 @@ class GetDataSetList
     filter_by_namespace unless @namespace.nil?
     puts 'Done to list data set.'
 
-    puts "Start to desctribe data sets and its permissions"
+    puts "Start to desctribe data sets and its permissions."
     @data_set_ids.each_with_index do |ds_id, i|
       puts "Wait to check data_set_id: #{ds_id}... (#{i+1}/#{@data_set_ids.size})"
       permissioned_to_default = false
@@ -113,14 +113,14 @@ class GetDataSetList
     puts 'Wait to generate csv file...'
     columns_names = %w(namespace data_set_id data_set_name spice_capacity permissions_to_default created_at last_updated_at)
 
-    CSV.open('outputs/ListDataSets.csv', 'w', quote_char: "") do |csv|
+    CSV.open('../outputs/ListDataSets.csv', 'w', quote_char: "") do |csv| # Do not change extension.
       csv << columns_names
       @rows.map { |row| csv << row }
     end
     puts 'Done to generate csv file.'
 
     puts 'Wait to generate txt file...'
-    file = File.open("outputs/ListDataSetNames.txt", "w")
+    file = File.open("../outputs/ListDataSetNames.txt", "w") # Do not change extension.
     @checked_data_set_ids.each do |id|
       file.puts("'#{id}'\n")
     end

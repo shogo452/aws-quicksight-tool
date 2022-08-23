@@ -1,0 +1,135 @@
+#! /usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'json'
+require 'optparse'
+require_relative '../modules/quicksight/list_dashboards'
+require_relative '../modules/quicksight/describe_dashboard'
+require_relative '../modules/quicksight/describe_analysis'
+require_relative '../modules/quicksight/describe_data_set'
+
+class GetDashboardTree
+  def initialize
+    option = CmdOptionParser.new.execute
+    @profile = option.profile
+    @dashboard_id = option.dashboard_id
+    @tree = {}
+  end
+
+  def execute
+    puts 'Started to get dashboard tree.'
+    puts 'Wait to list dashboards...'
+    resp_list_dashboards = Quicksight::ListDashboards.new(@profile).execute
+    resp_list_dashboards["DashboardSummaryList"][0..1].each do |d|
+      # pp d["DashboardId"]
+      @tree[d["DashboardId"]] = {}
+      @tree[d["DashboardId"]][:dashboard_name] = d["Name"]
+      resp_describe_dashboard = Quicksight::DescribeDashboard.new(@profile, d["DashboardId"]).execute
+      analysis_id = resp_describe_dashboard["Dashboard"]["Version"]["SourceEntityArn"].split("/")[1]
+      # pp analysis_id
+      @tree[d["DashboardId"]][:analysis_id] = analysis_id
+      resp_describe_analysis = Quicksight::DescribeAnalysis.new(@profile, analysis_id).execute
+      next if resp_describe_analysis.nil?
+      analysis_name = resp_describe_analysis["Analysis"]["Name"]
+      data_set_ids = resp_describe_analysis["Analysis"]["DataSetArns"].map { |ds| ds.split("/")[1] }
+      @tree[d["DashboardId"]][:analysis_name] = analysis_name
+
+      @tree[d["DashboardId"]][:datasets] = {}
+      @tree[d["DashboardId"]][:dataset_children] = {}
+      data_set_ids.each do |ds_id|
+
+        resp_describe_data_set = Quicksight::DescribeDataSet.new(@profile, ds_id).execute
+        next if resp_describe_data_set.nil?        
+        @tree[d["DashboardId"]][:datasets][ds_id] = resp_describe_data_set["DataSet"]["Name"]
+        data_set_labels = resp_describe_data_set["DataSet"]["LogicalTableMap"].values.reject { |d| d["Source"]["DataSetArn"].nil? }.map {|d|d["Source"]["DataSetArn"].split("/")[1] + " : " + d["Alias"]}.sort
+        @tree[d["DashboardId"]][:dataset_children][ds_id] = data_set_labels
+      end
+      # pp "#{d["DashboardId"]}"
+      # pp @tree
+    end
+    puts 'Done to list dashboards.'
+    # pp @tree
+    puts "Start to desctribe dashboard."
+
+
+    stringfy_tree = ""
+    @tree.each do |key, value|
+      stringfy_tree += "[dashboard] #{key} : #{value[:dashboard_name]}\n"
+      stringfy_tree += " └ [analysis] #{value[:analysis_id]} : #{value[:analysis_name]}\n"
+      data_sets_size = value[:datasets].size
+      value[:datasets].each.with_index(1) do |(id, name), i|
+        if i != data_sets_size
+          stringfy_tree += "    ├── [dataset] #{id} : #{name}\n"
+        else
+          stringfy_tree += "    └── [dataset] #{id} : #{name}\n"
+        end
+        
+        unless value[:dataset_children][id].empty?
+          children_size = value[:dataset_children][id].size
+          value[:dataset_children][id].each.with_index(1) do |child, j|
+            if i != data_sets_size && j != children_size
+              stringfy_tree += "    │       ├── [dataset] #{child}\n"
+            elsif i == data_sets_size && j != children_size
+              stringfy_tree += "            ├── [dataset] #{child}\n"
+            elsif i != data_sets_size && j == children_size
+              stringfy_tree += "    │       └── [dataset] #{child}\n"
+            else
+              stringfy_tree += "            └── [dataset] #{child}\n"
+            end
+            j += 1
+          end
+        end
+        i += 1
+      end
+    end
+
+    puts stringfy_tree
+
+    File.open("../outputs/dashboard_tree.txt","w") do |f|  # Do not change extension.
+    @checked_data_set_ids.each do |id|
+      f.puts(stringfy_tree)
+    end
+  end
+end
+
+class CmdOptionParser
+  Option = Struct.new(:profile, :dashboard_id)
+
+  def initialize
+    @option = Option.new
+  end
+
+  def execute
+    ::OptionParser.new do |o|
+      o.on('-p', '--profile PROFILE_NAME', 'AWS profile name (Required)') { |v| option.profile = v }
+      o.on('-d', '--dashboard-id DASHBOARD_ID', 'Dashboard ID (Optional)') { |v| option.dasbboard_id = v }
+      o.on('-h', '--help', 'Show help.') do |_v|
+        puts o
+        exit
+      end
+      o.banner = 'Usage: To get dashboard tree with analysis ans datasets on AWS QuickSight'
+      o.parse!(ARGV)
+
+      return @option if valid?
+
+      warn 'profile is required.'
+      puts o.help
+      exit(1)
+    end
+  end
+
+  private
+
+  attr_reader :option
+
+  def valid?
+    unless option.profile
+      warn 'profile is missing.'
+      exit(1)
+    end
+
+    true
+  end
+end
+
+GetDashboardTree.new.execute
