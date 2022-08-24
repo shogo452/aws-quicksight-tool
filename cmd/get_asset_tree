@@ -1,0 +1,171 @@
+#! /usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'json'
+require 'optparse'
+require_relative '../modules/quicksight/list_dashboards'
+require_relative '../modules/quicksight/describe_dashboard'
+require_relative '../modules/quicksight/describe_analysis'
+require_relative '../modules/quicksight/describe_data_set'
+require_relative '../modules/quicksight/error'
+
+class GetAssetTree
+  def initialize
+    option = CmdOptionParser.new.execute
+    @profile = option.profile
+    @dashboard_id = option.dashboard_id
+    @assets = {}
+  end
+
+  def execute
+    puts 'Start to get asset tree.'
+    list_dashboards
+
+    @list_dashboards.each_with_index do |dashboard, index|
+      puts "Wait to desctribe dashboard and its assets... (#{index+1}/#{@list_dashboards.size})"
+
+      dashboard_id = dashboard["DashboardId"]
+      
+      @assets[dashboard_id] = {}
+      @assets[dashboard_id][:source_datasets] = {}
+      @assets[dashboard_id][:joined_datasets] = {}
+
+      @assets[dashboard_id][:dashboard_name] = dashboard["Name"]
+
+      analysis_id = get_analysis_id(dashboard_id)
+
+      begin
+        describe_analysis(dashboard_id, analysis_id)
+        describe_each_data_set(dashboard_id)
+      rescue Quicksight::ResponseError
+        next
+      end
+
+      puts "Done to desctribe dashboard and its assets. (#{index+1}/#{@list_dashboards.size})"
+    end
+
+    export_asset_tree
+    puts "Completed to get asset tree."
+  end
+
+  def list_dashboards
+    puts 'Wait to list dashboards...'
+    resp_list_dashboards = Quicksight::ListDashboards.new(@profile).execute
+    puts 'Done to list dashboards.'
+    @list_dashboards = resp_list_dashboards["DashboardSummaryList"]
+  end
+
+  def get_analysis_id(dashboard_id)
+    resp_describe_dashboard = Quicksight::DescribeDashboard.new(@profile, dashboard_id).execute
+    analysis_id = resp_describe_dashboard["Dashboard"]["Version"]["SourceEntityArn"].split("/")[1]
+    @assets[dashboard_id][:analysis_id] = analysis_id
+    analysis_id
+  end
+
+  def describe_analysis(dashboard_id, analysis_id)
+    resp_describe_analysis = Quicksight::DescribeAnalysis.new(@profile, analysis_id).execute
+    raise Quicksight::ResponseError if resp_describe_analysis.nil?
+
+    analysis_name = resp_describe_analysis["Analysis"]["Name"]
+    @assets[dashboard_id][:analysis_name] = analysis_name
+    @data_set_ids = resp_describe_analysis["Analysis"]["DataSetArns"].map { |ds| ds.split("/")[1] }
+  end
+
+  def describe_each_data_set(dashboard_id)
+    @data_set_ids.each do |ds_id|
+      resp_describe_data_set = Quicksight::DescribeDataSet.new(@profile, ds_id).execute
+      next if resp_describe_data_set.nil?
+
+      @assets[dashboard_id][:source_datasets][ds_id] = resp_describe_data_set["DataSet"]["Name"]
+      data_set_labels = resp_describe_data_set["DataSet"]["LogicalTableMap"].values
+                                                                            .reject { |table| table["Source"]["DataSetArn"].nil? }
+                                                                            .map {|table|table["Source"]["DataSetArn"].split("/")[1] + " : " + table["Alias"]}
+                                                                            .sort
+      @assets[dashboard_id][:joined_datasets][ds_id] = data_set_labels
+    end
+  end
+  
+
+  def export_asset_tree
+    puts "Start to export asset tree."
+    asset_tree = ""
+    @assets.each do |key, value|
+      asset_tree += "[dashboard] #{key} : #{value[:dashboard_name]}\n"
+      asset_tree += " └ [analysis] #{value[:analysis_id]} : #{value[:analysis_name]}\n"
+      last_source_ds_index = value[:source_datasets].size
+      value[:source_datasets].each.with_index(1) do |(id, name), source_ds_index|
+        if source_ds_index != last_source_ds_index
+          asset_tree += "    ├── [dataset] #{id} : #{name}\n"
+        else
+          asset_tree += "    └── [dataset] #{id} : #{name}\n"
+        end
+        
+        unless value[:joined_datasets][id].empty?
+          last_joined_ds_index = value[:joined_datasets][id].size
+          value[:joined_datasets][id].each.with_index(1) do |joined_ds, joined_ds_index|
+            if source_ds_index != last_source_ds_index && joined_ds_index != last_joined_ds_index
+              asset_tree += "    │       ├── [dataset] #{joined_ds}\n"
+            elsif source_ds_index == last_source_ds_index && joined_ds_index != last_joined_ds_index
+              asset_tree += "            ├── [dataset] #{joined_ds}\n"
+            elsif source_ds_index != last_source_ds_index && joined_ds_index == last_joined_ds_index
+              asset_tree += "    │       └── [dataset] #{joined_ds}\n"
+            else
+              asset_tree += "            └── [dataset] #{joined_ds}\n\n"
+            end
+            joined_ds_index += 1
+          end
+        end
+
+        source_ds_index += 1
+      end
+    end
+
+    File.open("../outputs/AssetTree.txt","w") do |f|  # Do not change extension.
+      f.puts(asset_tree)
+    end
+
+    puts "Done to export asset tree."
+  end
+end
+
+class CmdOptionParser
+  Option = Struct.new(:profile, :dashboard_id)
+
+  def initialize
+    @option = Option.new
+  end
+
+  def execute
+    ::OptionParser.new do |o|
+      o.on('-p', '--profile PROFILE_NAME', 'AWS profile name (Required)') { |v| option.profile = v }
+      o.on('-d', '--dashboard-id DASHBOARD_ID', 'Dashboard ID (Optional)') { |v| option.dasbboard_id = v }
+      o.on('-h', '--help', 'Show help.') do |_v|
+        puts o
+        exit
+      end
+      o.banner = 'Usage: To get dashboard tree with analysis ans datasets on AWS QuickSight'
+      o.parse!(ARGV)
+
+      return @option if valid?
+
+      warn 'profile is required.'
+      puts o.help
+      exit(1)
+    end
+  end
+
+  private
+
+  attr_reader :option
+
+  def valid?
+    unless option.profile
+      warn 'profile is missing.'
+      exit(1)
+    end
+
+    true
+  end
+end
+
+GetAssetTree.new.execute

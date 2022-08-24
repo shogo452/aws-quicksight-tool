@@ -1,0 +1,119 @@
+#! /usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'json'
+require 'optparse'
+require 'time'
+require_relative '../modules/quicksight/list_ingestions'
+
+class GetIngestionHistory
+  def initialize
+    option = CmdOptionParser.new.execute
+    @profile = option.profile
+    @data_set_id = option.data_set_id
+    @limit = option.limit
+    @rows = []
+  end
+
+  def execute
+    column_labels = {
+      ingestion_id: "Ingesion ID",
+      ingested_at: "Ingestion At",
+      total_rows: "Total Rows",
+      ingestion_size: "Ingestion Size [GB]"
+    }
+
+    if @limit
+      ingestions = list_ingestions.first(@limit.to_i) 
+    else
+      ingestions = list_ingestions
+    end
+
+    ingestions.each do |ingestion|
+      @rows << {
+        ingestion_id: ingestion["IngestionId"],
+        ingested_at: Time.parse(ingestion["CreatedTime"]).strftime("%F %H:%M:%S"),
+        total_rows: ingestion["RowInfo"]["TotalRowsInDataset"].to_s,
+        ingestion_size: convert_gigabytes(ingestion["IngestionSizeInBytes"]).to_s
+      }
+    end
+
+    @columns = column_labels.each_with_object({}) { |(col,label),h| h[col] = { label: label, width: [@rows.map { |r| r[col].size }.max, label.size].max } }
+
+    write_divider
+    write_header
+    write_divider
+    @rows.each { |h| write_line(h) }
+    write_divider
+  end
+
+  private
+
+  def list_ingestions
+    resp_list_ingestions = Quicksight::ListIngestions.new(@profile, @data_set_id).execute
+    resp_list_ingestions["Ingestions"]
+  end
+
+  def write_header
+    puts "| #{ @columns.map { |_,g| g[:label].ljust(g[:width]) }.join(' | ') } |"
+  end
+
+  def write_divider
+    puts "+-#{ @columns.map { |_,g| "-"*g[:width] }.join("-+-") }-+"
+  end
+
+  def write_line(h)
+    row = h.keys.map { |k| h[k].ljust(@columns[k][:width]) }.join(" | ")
+    puts "| #{row} |"
+  end
+
+  def convert_gigabytes(bytes)
+    bytes.fdiv(1024 * 1024 * 1024)
+  end
+end
+
+class CmdOptionParser
+  Option = Struct.new(:profile, :data_set_id, :limit)
+
+  def initialize
+    @option = Option.new
+  end
+
+  def execute
+    ::OptionParser.new do |o|
+      o.on('-p', '--profile PROFILE_NAME', 'AWS profile name (Required)') { |v| option.profile = v }
+      o.on('-d', '--dataset-id DATASET_ID', 'Dataset ID (Required)') { |v| option.data_set_id = v }
+      o.on('-l', '--limit LIMIT', 'Limit (Optional)') { |v| option.limit = v }
+      o.on('-h', '--help', 'Show help.') do |_v|
+        puts o
+        exit
+      end
+      o.banner = 'Usage: To get ingestion history on AWS QuickSight'
+      o.parse!(ARGV)
+
+      return @option if valid?
+
+      puts o.help
+      exit(1)
+    end
+  end
+
+  private
+
+  attr_reader :option
+
+  def valid?
+    unless option.profile
+      warn 'profile is missing.'
+      exit(1)
+    end
+    unless option.data_set_id
+      warn 'data_set_id is missing.'
+      exit(1)
+    end
+
+    true
+  end
+end
+
+GetIngestionHistory.new.execute
