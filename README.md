@@ -1,7 +1,12 @@
 # aws-quicksight-tool
 
 aws-quicksight-tool assists in the use of the AWS QuickSight CLI.
-It can output a CSV listing of QuickSight data sets by namespace, and the spice capacity of each data set.
+
+The following things can be performed with it.
+
+* Output a CSV listing of QuickSight data sets by namespace, and the spice capacity of each data set
+* Tree-like output of relationships between assets such as dashboards and analyses and datasets
+* Tabular output of import history into SPICE for a single data set
 
 ## Prerequisites and Preparation
 
@@ -39,7 +44,7 @@ It can output a CSV listing of QuickSight data sets by namespace, and the spice 
   * Multi-tenant separate namespace: use the prefix such as "tenant-1-".
 * If you do not use namespaces and do not have your own numbering rules, you do not need to take any special action.
 
-## Usage
+## Usage : Output CSV list
 
 ### Command
 
@@ -56,7 +61,7 @@ cmd/get_data_set_list --profile=<profile>
 
 ### Outputs
 
-#### **outputs/ListDataSets.csv**
+#### outputs/ListDataSets.csv
 
 The following list is output.
 
@@ -66,7 +71,7 @@ The following list is output.
 |tenant-1|data_set_id_2|data_set_name_2|0.016687[GB]|-|2022-07-20 11:01:46|2022-07-24 05:18:10|
 |tenant-2|data_set_id_3|data_set_name_3|0.056743[GB]|-|2022-07-20 11:01:46|2022-07-24 05:18:10|
 
-#### **outputs/ListDataSetNames.txt**
+#### outputs/ListDataSetNames.txt
 
 The string of the data set ID targeted for output is also output as a text file as shown below. Please use it for batch processing in shell scripts, etc.
 
@@ -76,9 +81,9 @@ The string of the data set ID targeted for output is also output as a text file 
 'data_set_id_3',
 ```
 
-## Options
+### Options
 
-### --namespace
+#### --namespace
 
 To use when you want to list data sets that have been given permissions in a specific namespace.
 
@@ -86,10 +91,91 @@ To use when you want to list data sets that have been given permissions in a spe
 cmd/get_data_set_list --profile=<profile> --namespace=tenant1
 ```
 
-### --only-named
+#### --only-named
 
 To use when you want to list data sets whose data set IDs are numbered with your own numbering rules.
 
 ```txt
 cmd/get_data_set_list --profile=<profile> --only-named
+```
+
+## Usage : Tree view of assets
+
+### Command
+
+```txt
+cmd/get_asset_tree -h
+Usage: To get dashboard tree with analysis ans datasets on AWS QuickSight
+    -p, --profile PROFILE_NAME       AWS profile name (Required)
+    -d, --dashboard-id DASHBOARD_ID  Dashboard ID (Optional)
+    -h, --help                       Show help.
+
+cmd/get_asset_tree --profile=<profile>
+```
+
+### Output
+
+#### **outputs/AssetTree.txt**
+
+The following text is output.
+
+```txt
+[dashboard] dashboard_id_1 : dashboard_name_id_1
+└ [analysis] analysis_id_1 : analysis_name_1
+    ├── [dataset] data_set_id_1 : data_set_name_1
+    │       ├── [dataset] data_set_id_7 : data_set_name_7
+    │       └── [dataset] data_set_id_8 : data_set_name_8
+    ├── [dataset] data_set_id_2 : data_set_name_2
+    └── [dataset] data_set_id_3 : data_set_name_3
+
+[dashboard] dashboard_id_2 : dashboard_name_id_2
+└ [analysis] analysis_id_2 : analysis_id_2
+    ├── [dataset] data_set_id_4 : data_set_name_4
+    ├── [dataset] data_set_id_5 : data_set_name_5
+    └── [dataset] data_set_id_6 : data_set_name_6
+```
+
+### Options
+
+#### --dashboard-id
+
+```txt
+cmd/get_asset_tree --profile=<profile> --dashboard-id=<dashboard-id>
+```
+
+## Usage : Output import history of SPICE
+
+### Command
+
+```txt
+cmd/get_ingestion_history -h                                                       
+Usage: To get ingestion history on AWS QuickSight
+    -p, --profile PROFILE_NAME       AWS profile name (Required)
+    -d, --dataset-id DATASET_ID      Dataset ID (Required)
+    -l, --limit LIMIT                Limit (Optional)
+    -h, --help                       Show help.
+
+cmd/get_ingestion_history --profile=<profile> --dataset-id=<dataset_id>
+```
+
+### Output
+
+```txt
++--------------------------------------+---------------------+------------+-----------------------+
+| Ingesion ID                          | Ingestion At        | Total Rows | Ingestion Size [GB]   |
++--------------------------------------+---------------------+------------+-----------------------+
+| aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee | 2022-08-24 12:05:24 | 174        | 2.488028258085251e-05 |
+| ffffffff-gggg-hhhh-iiii-jjjjjjjjjjjj | 2022-08-24 11:10:29 | 174        | 2.488028258085251e-05 |
+| kkkkkkkk-llll-mmmm-nnnn-oooooooooooo | 2022-08-24 05:15:22 | 174        | 2.488028258085251e-05 |
+| pppppppp-qqqq-rrrr-ssss-tttttttttttt | 2022-08-23 05:15:13 | 137        | 1.936499029397964e-05 |
+| uuuuuuuu-vvvv-wwww-xxxx-yyyyyyyyyyyy | 2022-08-22 09:12:07 | 137        | 1.936499029397964e-05 |
++--------------------------------------+---------------------+------------+-----------------------+
+```
+
+### Options
+
+#### --limit
+
+```txt
+cmd/get_ingestion_history --profile=<profile> --dataset-id=<dataset_id> --limit=<number>
 ```
