@@ -74,14 +74,17 @@ class GetAssetTree
   def describe_each_data_set(dashboard_id)
     @data_set_ids.each do |ds_id|
       resp_describe_data_set = Quicksight::DescribeDataSet.new(@profile, ds_id).execute
-      next if resp_describe_data_set.nil?
-
-      @assets[dashboard_id][:source_datasets][ds_id] = resp_describe_data_set["DataSet"]["Name"]
-      data_set_labels = resp_describe_data_set["DataSet"]["LogicalTableMap"].values
-                                                                            .reject { |table| table["Source"]["DataSetArn"].nil? }
-                                                                            .map {|table|table["Source"]["DataSetArn"].split("/")[1] + " : " + table["Alias"]}
-                                                                            .sort
-      @assets[dashboard_id][:joined_datasets][ds_id] = data_set_labels
+      if resp_describe_data_set.nil?
+        @assets[dashboard_id][:source_datasets][ds_id] = ""
+        @assets[dashboard_id][:joined_datasets][ds_id] = []
+      else
+        @assets[dashboard_id][:source_datasets][ds_id] = resp_describe_data_set["DataSet"]["Name"]
+        data_set_labels = resp_describe_data_set["DataSet"]["LogicalTableMap"].values
+                                                                              .reject { |table| table["Source"]["DataSetArn"].nil? }
+                                                                              .map {|table|table["Source"]["DataSetArn"].split("/")[1] + " : " + table["Alias"]}
+                                                                              .sort
+        @assets[dashboard_id][:joined_datasets][ds_id] = data_set_labels
+      end
     end
   end
   
@@ -93,11 +96,17 @@ class GetAssetTree
       asset_tree += "[dashboard] #{key} : #{value[:dashboard_name]}\n"
       asset_tree += " └ [analysis] #{value[:analysis_id]} : #{value[:analysis_name]}\n"
       last_source_ds_index = value[:source_datasets].size
+      asset_tree += "    └── No datasets\n\n" if last_source_ds_index == 0
+
       value[:source_datasets].each.with_index(1) do |(id, name), source_ds_index|
-        if source_ds_index != last_source_ds_index
+        if source_ds_index != last_source_ds_index && !name.empty?
           asset_tree += "    ├── [dataset] #{id} : #{name}\n"
-        else
+        elsif source_ds_index != last_source_ds_index && name.empty?
+          asset_tree += "    ├✕─ [dataset] #{id}\n"
+        elsif source_ds_index == last_source_ds_index && !name.empty?
           asset_tree += "    └── [dataset] #{id} : #{name}\n"
+        else
+          asset_tree += "    └✕─ [dataset] #{id}\n\n"
         end
         
         unless value[:joined_datasets][id].empty?
