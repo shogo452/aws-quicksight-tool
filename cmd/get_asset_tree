@@ -120,7 +120,7 @@ class GetAssetTree
       end
     end
 
-    File.open("../outputs/AssetTree.txt","w") do |f|  # Do not change extension.
+    File.open("outputs/AssetTree.txt","w") do |f|  # Do not change extension.
       f.puts(asset_tree)
     end
 
