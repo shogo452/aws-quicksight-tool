@@ -9,7 +9,7 @@ require_relative '../modules/quicksight/describe_analysis'
 require_relative '../modules/quicksight/describe_data_set'
 require_relative '../modules/quicksight/error'
 
-class GetAssetTree
+class GetDashboardTree
   def initialize
     option = CmdOptionParser.new.execute
     @profile = option.profile
@@ -18,12 +18,10 @@ class GetAssetTree
   end
 
   def execute
-    puts 'Start to get asset tree.'
-    list_dashboards
-
+    puts 'Start to get dashboard tree.'
+    @dashboard_id ? describe_dashboard : list_dashboards
     @list_dashboards.each_with_index do |dashboard, index|
       puts "Wait to desctribe dashboard and its assets... (#{index+1}/#{@list_dashboards.size})"
-
       dashboard_id = dashboard["DashboardId"]
       
       @assets[dashboard_id] = {}
@@ -44,8 +42,18 @@ class GetAssetTree
       puts "Done to desctribe dashboard and its assets. (#{index+1}/#{@list_dashboards.size})"
     end
 
-    export_asset_tree
-    puts "Completed to get asset tree."
+    export_dashboard_tree
+    puts "Completed to get dashboard tree."
+  end
+
+  def describe_dashboard
+    puts 'Wait to describe dashboard...'
+    resp_describe_dashboard = Quicksight::DescribeDashboard.new(@profile, @dashboard_id).execute
+    puts 'Done to describe dashboard.'
+    @list_dashboards = [{
+      "DashboardId" => @dashboard_id,
+      "Name" => resp_describe_dashboard["Dashboard"]["Name"]
+    }]
   end
 
   def list_dashboards
@@ -74,30 +82,39 @@ class GetAssetTree
   def describe_each_data_set(dashboard_id)
     @data_set_ids.each do |ds_id|
       resp_describe_data_set = Quicksight::DescribeDataSet.new(@profile, ds_id).execute
-      next if resp_describe_data_set.nil?
-
-      @assets[dashboard_id][:source_datasets][ds_id] = resp_describe_data_set["DataSet"]["Name"]
-      data_set_labels = resp_describe_data_set["DataSet"]["LogicalTableMap"].values
-                                                                            .reject { |table| table["Source"]["DataSetArn"].nil? }
-                                                                            .map {|table|table["Source"]["DataSetArn"].split("/")[1] + " : " + table["Alias"]}
-                                                                            .sort
-      @assets[dashboard_id][:joined_datasets][ds_id] = data_set_labels
+      if resp_describe_data_set.nil?
+        @assets[dashboard_id][:source_datasets][ds_id] = ""
+        @assets[dashboard_id][:joined_datasets][ds_id] = []
+      else
+        @assets[dashboard_id][:source_datasets][ds_id] = resp_describe_data_set["DataSet"]["Name"]
+        data_set_labels = resp_describe_data_set["DataSet"]["LogicalTableMap"].values
+                                                                              .reject { |table| table["Source"]["DataSetArn"].nil? }
+                                                                              .map {|table|table["Source"]["DataSetArn"].split("/")[1] + " : " + table["Alias"]}
+                                                                              .sort
+        @assets[dashboard_id][:joined_datasets][ds_id] = data_set_labels
+      end
     end
   end
   
 
-  def export_asset_tree
-    puts "Start to export asset tree."
+  def export_dashboard_tree
+    puts "Start to export dashboard tree."
     asset_tree = ""
     @assets.each do |key, value|
       asset_tree += "[dashboard] #{key} : #{value[:dashboard_name]}\n"
       asset_tree += " └ [analysis] #{value[:analysis_id]} : #{value[:analysis_name]}\n"
       last_source_ds_index = value[:source_datasets].size
+      asset_tree += "    └── No datasets\n\n" if last_source_ds_index == 0
+
       value[:source_datasets].each.with_index(1) do |(id, name), source_ds_index|
-        if source_ds_index != last_source_ds_index
+        if source_ds_index != last_source_ds_index && !name.empty?
           asset_tree += "    ├── [dataset] #{id} : #{name}\n"
-        else
+        elsif source_ds_index != last_source_ds_index && name.empty?
+          asset_tree += "    ├✕─ [dataset] #{id} (🚨 Not Found)\n"
+        elsif source_ds_index == last_source_ds_index && !name.empty?
           asset_tree += "    └── [dataset] #{id} : #{name}\n"
+        else
+          asset_tree += "    └✕─ [dataset] #{id} (🚨 Not Found)\n\n"
         end
         
         unless value[:joined_datasets][id].empty?
@@ -120,11 +137,11 @@ class GetAssetTree
       end
     end
 
-    File.open("outputs/AssetTree.txt","w") do |f|  # Do not change extension.
+    File.open("outputs/DashboardTree.txt","w") do |f|  # Do not change extension.
       f.puts(asset_tree)
     end
 
-    puts "Done to export asset tree."
+    puts "Done to export dashboard tree."
   end
 end
 
@@ -138,12 +155,12 @@ class CmdOptionParser
   def execute
     ::OptionParser.new do |o|
       o.on('-p', '--profile PROFILE_NAME', 'AWS profile name (Required)') { |v| option.profile = v }
-      o.on('-d', '--dashboard-id DASHBOARD_ID', 'Dashboard ID (Optional)') { |v| option.dasbboard_id = v }
+      o.on('-d', '--dashboard-id DASHBOARD_ID', 'Dashboard ID (Optional)') { |v| option.dashboard_id = v }
       o.on('-h', '--help', 'Show help.') do |_v|
         puts o
         exit
       end
-      o.banner = 'Usage: To get dashboard tree with analysis ans datasets on AWS QuickSight'
+      o.banner = 'Usage: To get dashboard tree with analysis and datasets on AWS QuickSight'
       o.parse!(ARGV)
 
       return @option if valid?
@@ -168,4 +185,4 @@ class CmdOptionParser
   end
 end
 
-GetAssetTree.new.execute
+GetDashboardTree.new.execute
