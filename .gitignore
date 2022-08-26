@@ -1,2 +1,4 @@
 *.csv
 *.txt
+.env
+.DS_Store
