@@ -1,0 +1,166 @@
+#! /usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'json'
+require 'optparse'
+require_relative '../modules/quicksight/list_analyses'
+require_relative '../modules/quicksight/describe_analysis'
+require_relative '../modules/quicksight/describe_data_set'
+
+class GetAnalysisTree
+  def initialize
+    option = CmdOptionParser.new.execute
+    @profile = option.profile
+    @analysis_id = option.analysis_id
+    @assets = {}
+  end
+
+  def execute
+    puts 'Start to get analysis tree.'
+    @analysis_id ? describe_analysis(@analysis_id) : list_analyses
+    @list_analyses.each_with_index do |analysis, index|
+      next if analysis["Status"] == "DELETED"
+
+      puts "Wait to desctribe analysis and belonged datasets... (#{index+1}/#{@list_analyses.size})"
+      analysis_id = analysis["AnalysisId"]
+      @assets[analysis_id] = {}
+      @assets[analysis_id][:source_datasets] = {}
+      @assets[analysis_id][:joined_datasets] = {}
+
+      describe_analysis_and_belonged_data_sets(analysis_id)
+      puts "Done to desctribe analysis and belonged datasets. (#{index+1}/#{@list_analyses.size})"
+    end
+
+    export_analysis_tree
+    puts "Completed to get analysis tree."
+  end
+
+  def list_analyses
+    puts 'Wait to list analyses...'
+    resp_list_analyses = Quicksight::ListAnalyses.new(@profile).execute
+    puts 'Done to list analyses.'
+    @list_analyses = resp_list_analyses["AnalysisSummaryList"].select { |a| a["Status"] == "CREATION_SUCCESSFUL" }    
+  end
+
+  def describe_analysis(analysis_id)
+    puts 'Wait to describe analysis...'
+    resp_describe_analysis = Quicksight::DescribeAnalysis.new(@profile, analysis_id).execute
+    puts 'Done to describe dashboard.'
+    @list_analyses = [{
+      "AnalysisId" => @analysis_id,
+      "Name" => resp_describe_analysis["Analysis"]["Name"]
+    }] 
+
+  end
+
+  def describe_analysis_and_belonged_data_sets(analysis_id)
+    puts 'Wait to describe analysis and belonged data sets...'
+    resp_describe_analysis = Quicksight::DescribeAnalysis.new(@profile, analysis_id).execute
+    @assets[analysis_id][:analysis_name] = resp_describe_analysis["Analysis"]["Name"]
+    @data_set_ids = resp_describe_analysis["Analysis"]["DataSetArns"].map { |ds| ds.split("/")[1] }
+    @data_set_ids.each do |ds_id|
+      resp_describe_data_set = Quicksight::DescribeDataSet.new(@profile, ds_id).execute
+      if resp_describe_data_set.nil?
+        @assets[analysis_id][:source_datasets][ds_id] = ""
+        @assets[analysis_id][:joined_datasets][ds_id] = []
+      else
+        @assets[analysis_id][:source_datasets][ds_id] = resp_describe_data_set["DataSet"]["Name"]
+        data_set_labels = resp_describe_data_set["DataSet"]["LogicalTableMap"].values
+                                                                              .reject { |table| table["Source"]["DataSetArn"].nil? }
+                                                                              .map {|table|table["Source"]["DataSetArn"].split("/")[1] + " : " + table["Alias"]}
+                                                                              .sort
+        @assets[analysis_id][:joined_datasets][ds_id] = data_set_labels
+      end
+    end
+    puts 'Done to describe analysis and belonged data sets.'
+  end
+  
+
+  def export_analysis_tree
+    puts "Start to export analysis tree."
+    asset_tree = ""
+    @assets.each do |key, value|
+      asset_tree += "[analysis] #{key} : #{value[:analysis_name]}\n"
+      last_source_ds_index = value[:source_datasets].size
+      asset_tree += "└── No datasets\n\n" if last_source_ds_index == 0
+
+      value[:source_datasets].each.with_index(1) do |(id, name), source_ds_index|
+        if source_ds_index != last_source_ds_index && !name.empty?
+          asset_tree += " ├── [dataset] #{id} : #{name}\n"
+        elsif source_ds_index != last_source_ds_index && name.empty?
+          asset_tree += " ├✕─ [dataset] #{id} (🚨 Not Found)\n"
+        elsif source_ds_index == last_source_ds_index && !name.empty?
+          asset_tree += " └── [dataset] #{id} : #{name}\n"
+        else
+          asset_tree += " └✕─ [dataset] #{id} (🚨 Not Found)\n\n"
+        end
+        
+        unless value[:joined_datasets][id].empty?
+          last_joined_ds_index = value[:joined_datasets][id].size
+          value[:joined_datasets][id].each.with_index(1) do |joined_ds, joined_ds_index|
+            if source_ds_index != last_source_ds_index && joined_ds_index != last_joined_ds_index
+              asset_tree += " │      ├── [dataset] #{joined_ds}\n"
+            elsif source_ds_index == last_source_ds_index && joined_ds_index != last_joined_ds_index
+              asset_tree += "         ├── [dataset] #{joined_ds}\n"
+            elsif source_ds_index != last_source_ds_index && joined_ds_index == last_joined_ds_index
+              asset_tree += " │      └── [dataset] #{joined_ds}\n"
+            else
+              asset_tree += "         └── [dataset] #{joined_ds}\n\n"
+            end
+            joined_ds_index += 1
+          end
+        end
+
+        source_ds_index += 1
+      end
+    end
+
+    File.open("outputs/AnalysisTree.txt","w") do |f|  # Do not change extension.
+      f.puts(asset_tree)
+    end
+
+    puts "Done to export analysis tree."
+  end
+end
+
+class CmdOptionParser
+  Option = Struct.new(:profile, :analysis_id)
+
+  def initialize
+    @option = Option.new
+  end
+
+  def execute
+    ::OptionParser.new do |o|
+      o.on('-p', '--profile PROFILE_NAME', 'AWS profile name (Required)') { |v| option.profile = v }
+      o.on('-a', '--analysis-id ANALYSIS_ID', 'Analysis ID (Optional)') { |v| option.analysis_id = v }
+      o.on('-h', '--help', 'Show help.') do |_v|
+        puts o
+        exit
+      end
+      o.banner = 'Usage: To get analysis tree with datasets on AWS QuickSight'
+      o.parse!(ARGV)
+
+      return @option if valid?
+
+      warn 'profile is required.'
+      puts o.help
+      exit(1)
+    end
+  end
+
+  private
+
+  attr_reader :option
+
+  def valid?
+    unless option.profile
+      warn 'profile is missing.'
+      exit(1)
+    end
+
+    true
+  end
+end
+
+GetAnalysisTree.new.execute
