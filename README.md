@@ -22,18 +22,26 @@ The following things can be performed with it.
 * To set your AWS account credentials in environment variables.
 
   ```txt
-  vim .zshrc
+  vim ~/.zshrc
   ```
 
   ```
-  # .zshrc
-
-  export QS_TOOL_AWS_REGION={REGION}
+  # ~/.zshrc
   export QS_TOOL_AWS_ACCOUNT_ID={AWS_ACCOUNT_ID}
   ```
 
   ```txt
-  source .zshrc
+  source ~/.zshrc
+  ```
+  
+  ```txt
+  touch .env
+  vim .env
+  ```
+  
+  ```
+  # .env
+  AWS_ACCOUNT_ID={AWS_ACCOUNT_ID}
   ```
 
 ### Applying an own naming rules
