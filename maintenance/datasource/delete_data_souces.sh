@@ -1,4 +1,6 @@
 #!/bin/bash
+
+# To describe AWS_ACCOUNT_ID in .dev
 source ../../.env
 
 data_source_ids=(
