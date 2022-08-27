@@ -99,23 +99,23 @@ To use when you want to list data sets whose data set IDs are numbered with your
 cmd/get_data_set_list --profile=<profile> --only-named
 ```
 
-## Usage : Tree view of assets
+## Usage : Tree view of dashboard and belonged assets
 
 ### Command
 
 ```txt
-cmd/get_asset_tree -h
-Usage: To get dashboard tree with analysis ans datasets on AWS QuickSight
+cmd/get_dashboard_tree -h
+Usage: To get dashboard tree with analysis and datasets on AWS QuickSight
     -p, --profile PROFILE_NAME       AWS profile name (Required)
     -d, --dashboard-id DASHBOARD_ID  Dashboard ID (Optional)
     -h, --help                       Show help.
 
-cmd/get_asset_tree --profile=<profile>
+cmd/get_dashboard_tree --profile=<profile>
 ```
 
 ### Output
 
-#### **outputs/AssetTree.txt**
+#### **outputs/DashboardTree.txt**
 
 The following text is output.
 
@@ -125,7 +125,7 @@ The following text is output.
     ├── [dataset] data_set_id_1 : data_set_name_1
     │       ├── [dataset] data_set_id_7 : data_set_name_7
     │       └── [dataset] data_set_id_8 : data_set_name_8
-    ├── [dataset] data_set_id_2 : data_set_name_2
+    ├✕─ [dataset] data_set_id_2 (🚨 Not Found)
     └── [dataset] data_set_id_3 : data_set_name_3
 
 [dashboard] dashboard_id_2 : dashboard_name_id_2
@@ -135,12 +135,48 @@ The following text is output.
     └── [dataset] data_set_id_6 : data_set_name_6
 ```
 
-### Options
+## Usage : Tree view of analysis and belonged datasets
 
-#### --dashboard-id
+This command also can be output an analysis not published to any dashboards.
+
+### Command
 
 ```txt
-cmd/get_asset_tree --profile=<profile> --dashboard-id=<dashboard-id>
+cmd/get_analysis_tree -h
+Usage: To get analysis tree with datasets on AWS QuickSight
+    -p, --profile PROFILE_NAME       AWS profile name (Required)
+    -a, --analysis-id ANALYSIS_ID    Analysis ID (Optional)
+    -h, --help                       Show help.
+
+cmd/get_analysis_tree --profile=<profile>
+```
+
+### Output
+
+#### **outputs/AnalysisTree.txt**
+
+The following text is output.
+
+```txt
+[analysis] analysis_id_1 : analysis_name_1
+ ├── [dataset] data_set_id_2 : data_set_name_2
+ │      ├── [dataset] data_set_id_4 : data_set_name_4
+ │      └── [dataset] data_set_id_5 : data_set_name_5
+ ├── [dataset] data_set_id_3 : data_set_name_3
+ │      ├── [dataset] data_set_id_6 : data_set_name_6
+ │      └── [dataset] data_set_id_7 : data_set_name_7
+ └✕─ [dataset] data_set_id_8 (🚨 Not Found)
+
+[analysis] analysis_id_2 : analysis_name_2
+ └── [dataset] data_set_id_9 : data_set_name_9
+```
+
+### Options
+
+#### --analysis-id
+
+```txt
+cmd/get_analysis_tree --profile=<profile> --analysis-id=<analysis-id>
 ```
 
 ## Usage : Output import history of SPICE

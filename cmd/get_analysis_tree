@@ -75,6 +75,9 @@ class GetAnalysisTree
     puts 'Done to describe analysis and belonged data sets.'
   end
   
+  def dist_path
+    Dir.pwd.split("/").last == 'cmd' ? '../outputs/' : 'outputs/'
+  end
 
   def export_analysis_tree
     puts "Start to export analysis tree."
@@ -115,7 +118,7 @@ class GetAnalysisTree
       end
     end
 
-    File.open("outputs/AnalysisTree.txt","w") do |f|  # Do not change extension.
+    File.open(dist_path + "AnalysisTree.txt","w") do |f|  # Do not change extension.
       f.puts(asset_tree)
     end
 
