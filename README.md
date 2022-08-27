@@ -88,7 +88,7 @@ The string of the data set ID targeted for output is also output as a text file 
 To use when you want to list data sets that have been given permissions in a specific namespace.
 
 ```txt
-cmd/get_data_set_list --profile=<profile> --namespace=tenant1
+cmd/get_data_set_list --profile=<profile> --namespace=tenant-1
 ```
 
 #### --only-named
