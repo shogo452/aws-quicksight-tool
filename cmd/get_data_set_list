@@ -40,6 +40,10 @@ class GetDataSetList
     @data_set_ids.reject! { |ds_id| ds_id =~ DATA_SET_ID_PATTERN }
   end
 
+  def dist_path
+    Dir.pwd.split("/").last == 'cmd' ? '../outputs/' : 'outputs/'
+  end
+
   def execute
     puts 'Started to get data set lists.'
     puts 'Wait to list namespaces...'
@@ -69,20 +73,14 @@ class GetDataSetList
       if !resp_describe_ds_permissions.nil?
         permissioned_namespaces = resp_describe_ds_permissions["Permissions"].map { |p| p["Principal"].split('/')[1] }
         permissioned_namespaces.uniq!
-        if permissioned_namespaces.include?("default") &&  permissioned_namespaces.size == 1
-          permissioned_to_default = true
-        elsif permissioned_namespaces.include?("default")
-          permissioned_to_default = true
-          permissioned_namespaces.delete("default")
-        end
+        permissioned_to_default = true if permissioned_namespaces.include?("default")
       else
         permissioned_namespaces = nil
       end
 
       if !resp_describe_ds.nil? && !resp_describe_ds_permissions.nil?
         permissioned_namespaces.each do |ns|
-          next if !@namespace.nil? && @namespace != ns
-
+          next if !@namespace.nil?
           @rows << [
             ns,
             ds_id,
@@ -96,7 +94,7 @@ class GetDataSetList
         end
       elsif !resp_describe_ds_permissions.nil?
         @rows << [
-          nil,
+          "Unknown",
           ds_id,
           resp_describe_ds["DataSet"]["Name"],
           "#{convert_gigabytes(resp_describe_ds["DataSet"]["ConsumedSpiceCapacityInBytes"]).to_f.round(6)}[GB]",
@@ -113,14 +111,14 @@ class GetDataSetList
     puts 'Wait to generate csv file...'
     columns_names = %w(namespace data_set_id data_set_name spice_capacity permissions_to_default created_at last_updated_at)
 
-    CSV.open('outputs/ListDataSets.csv', 'w', quote_char: "") do |csv| # Do not change extension.
+    CSV.open(dist_path + 'ListDataSets.csv', 'w', quote_char: "") do |csv| # Do not change extension.
       csv << columns_names
       @rows.map { |row| csv << row }
     end
     puts 'Done to generate csv file.'
 
     puts 'Wait to generate txt file...'
-    file = File.open("outputs/ListDataSetNames.txt", "w") # Do not change extension.
+    file = File.open(dist_path + 'ListDataSetNames.txt', "w") # Do not change extension.
     @checked_data_set_ids.each do |id|
       file.puts("'#{id}'\n")
     end

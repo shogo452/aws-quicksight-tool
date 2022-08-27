@@ -96,6 +96,9 @@ class GetDashboardTree
     end
   end
   
+  def dist_path
+    Dir.pwd.split("/").last == 'cmd' ? '../outputs/' : 'outputs/'
+  end
 
   def export_dashboard_tree
     puts "Start to export dashboard tree."
@@ -137,7 +140,7 @@ class GetDashboardTree
       end
     end
 
-    File.open("outputs/DashboardTree.txt","w") do |f|  # Do not change extension.
+    File.open(dist_path + "DashboardTree.txt","w") do |f|  # Do not change extension.
       f.puts(asset_tree)
     end
 
