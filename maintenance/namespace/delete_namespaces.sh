@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# To describe AWS_ACCOUNT_ID in .dev
-source ../../.env
+# To describe AWS_ACCOUNT_ID in maintenance/.dev
+source ../.env
 
 namespaces=(
 "namespace_1"
