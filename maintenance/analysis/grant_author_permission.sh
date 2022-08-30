@@ -2,6 +2,8 @@
 
 # To describe AWS_ACCOUNT_ID in maintenance/.dev
 source ./maintenance/.env
+
+# To describe ANALYSIS_IDS in maintenance/.target_resources
 source ./maintenance/.target_resources
 
 for administrator_arn in "${ADMIN_ARNS[@]}" ; do
