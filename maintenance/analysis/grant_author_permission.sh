@@ -1,15 +1,11 @@
 #!/bin/bash
 
 # To describe AWS_ACCOUNT_ID in maintenance/.dev
-source ../.env
+source ./maintenance/.env
+source ./maintenance/.target_resources
 
-analysis_ids=(
-"analysis_id_1"
-"analysis_id_2"
-)
-
-for administrator_arn in "${administrator_arns[@]}" ; do
-  for analysis_id in "${analysis_ids[@]}" ; do
+for administrator_arn in "${ADMIN_ARNS[@]}" ; do
+  for analysis_id in "${ANALYSIS_IDS[@]}" ; do
     aws quicksight update-analysis-permissions \
               --aws-account-id $AWS_ACCOUNT_ID \
               --analysis-id ${analysis_id} \
