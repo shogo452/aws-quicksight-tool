@@ -1,15 +1,13 @@
 #!/bin/bash
 
 # To describe AWS_ACCOUNT_ID in maintenance/.dev
-source ../.env
+source ./maintenance/.env
 
-data_set_ids=(
-"data_set_id_1"
-"data_set_id_2"
-)
+# To describe ANALYSIS_IDS in maintenance/.target_resources
+source ./maintenance/.target_resources
 
-for user_arn in "${USER_ARN[@]}" do
-  for data_set_id in "${data_set_ids[@]}" do
+for user_arn in "${ADMIN_ARNS[@]}" do
+  for data_set_id in "${DATASET_IDS[@]}" do
     aws quicksight update-data-set-permissions \
               --aws-account-id $AWS_ACCOUNT_ID \
               --data-set-id "${data_set_id}" \

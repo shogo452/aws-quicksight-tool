@@ -78,9 +78,12 @@ class GetDataSetList
         permissioned_namespaces = nil
       end
 
+      pp permissioned_namespaces
+
       if !resp_describe_ds.nil? && !resp_describe_ds_permissions.nil?
         permissioned_namespaces.each do |ns|
-          next if !@namespace.nil?
+          next if !@namespace.nil? && (@namespace != ns || @namespace != "default")
+
           @rows << [
             ns,
             ds_id,
@@ -106,6 +109,7 @@ class GetDataSetList
         @rows << [ "Error", ds_id, "Error", "Error", "-", "Error", "Error"]
       end
       puts "Done to check data_set_id: #{ds_id}. (#{i+1}/#{@data_set_ids.size})"
+      pp @rows
     end
 
     puts 'Wait to generate csv file...'
