@@ -1,5 +1,4 @@
 *.csv
 *.txt
 .env
-.target_resources
 .DS_Store
