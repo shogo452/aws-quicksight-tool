@@ -1,14 +1,24 @@
 #!/bin/bash
 
-# To describe AWS_ACCOUNT_ID in maintenance/.dev
-source ../.env
+# To create .dev and describe AWS_ACCOUNT_ID, ANALYSIS_IDS.
+SCRIPT_DIR=$(cd $(dirname $0); pwd)
+source $SCRIPT_DIR/.env
 
-analysis_ids=(
-"analysis_id_1"
-"analysis_id_2"
-)
+IFS=$'\n'
+echo "========================================== Analysis ==========================================="
+echo "${ANALYSIS_IDS[@]}"
+echo "==============================================================================================="
 
-for analysis_id in "${analysis_ids[@]}" ; do
+while true; do
+    read -p "Do you wish to delete the analyses? (y/n): " yn
+    case $yn in
+        [Yy]* ) break;;
+        [Nn]* ) exit 0;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+for analysis_id in "${ANALYSIS_IDS[@]}" ; do
     aws quicksight delete-analysis \
     --aws-account-id $AWS_ACCOUNT_ID \
     --analysis-id "${analysis_id}" | jq .

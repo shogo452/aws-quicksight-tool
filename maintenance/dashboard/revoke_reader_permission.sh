@@ -1,18 +1,30 @@
 #!/bin/bash
 
-# To describe AWS_ACCOUNT_ID in maintenance/.dev
-source ../.env
+# To create .dev and describe AWS_ACCOUNT_ID, USER_ARNS, DASHBOARD_IDS.
+SCRIPT_DIR=$(cd $(dirname $0); pwd)
+source $SCRIPT_DIR/.env
 
-analysis_ids=(
-"dashboard_id_1"
-"dashboard_id_2"
-)
+IFS=$'\n'
+echo "========================================== Users =============================================="
+echo "${USER_ARNS[@]}"
+echo "========================================== Dashboards ==========================================="
+echo "${DASHBOARD_IDS[@]}"
+echo "================================================================================================="
 
-for administrator_arn in "${administrator_arns[@]}" ; do
-  for dashboard_id in "${dashboard_ids[@]}" ; do
+while true; do
+    read -p "Do you wish to revoke reader permissions to the users for the dashboards? (y/n): " yn
+    case $yn in
+        [Yy]* ) break;;
+        [Nn]* ) exit 0;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+for user_arn in "${USER_ARNS[@]}" ; do
+  for dashboard_id in "${DASHBOARD_IDS[@]}" ; do
     aws quicksight update-dashboard-permissions \
               --aws-account-id $AWS_ACCOUNT_ID \
               --dashboard-id ${dashboard_id} \
-              --revoke-permissions Principal=${administrator_arn},,Actions=quicksight:DescribeDashboard,quicksight:ListDashboardVersions,quicksight:QueryDashboard
+              --revoke-permissions Principal=${user_arn},,Actions=quicksight:DescribeDashboard,quicksight:ListDashboardVersions,quicksight:QueryDashboard
   don
 done
