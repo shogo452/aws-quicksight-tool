@@ -78,9 +78,6 @@ class GetDataSetList
         permissioned_namespaces = nil
       end
 
-      pp ds_id
-      pp permissioned_namespaces
-
       if !resp_describe_ds.nil? && !resp_describe_ds_permissions.nil?
         permissioned_namespaces.each do |ns|
           next if !@namespace.nil? && @namespace != ns
