@@ -1,15 +1,27 @@
 #!/bin/bash
 
-# To describe AWS_ACCOUNT_ID in .dev
-source ../../.env
+# To create .dev and describe AWS_ACCOUNT_ID, USER_ARNS, DATASET_IDS.
+SCRIPT_DIR=$(cd $(dirname $0); pwd)
+source $SCRIPT_DIR/.env
 
-data_set_ids=(
-"data_set_id_1"
-"data_set_id_2"
-)
+IFS=$'\n'
+echo "========================================== Users =============================================="
+echo "${USER_ARNS[@]}"
+echo "========================================== Datasets ==========================================="
+echo "${DATASET_IDS[@]}"
+echo "==============================================================================================="
 
-for user_arn in "${USER_ARN[@]}" do
-  for data_set_id in "${data_set_ids[@]}" do
+while true; do
+    read -p "Do you wish to revoke author permissions to the users for the datasets? (y/n): " yn
+    case $yn in
+        [Yy]* ) break;;
+        [Nn]* ) exit 0;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+for user_arn in "${USER_ARNS[@]}" do
+  for data_set_id in "${DATASET_IDS[@]}" do
     aws quicksight update-data-set-permissions \
               --aws-account-id $AWS_ACCOUNT_ID \
               --data-set-id "${data_set_id}" \

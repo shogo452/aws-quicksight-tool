@@ -1,0 +1,11 @@
+AWS_ACCOUNT_ID=<AWS_ACCOUNT_ID>
+
+USER_ARNS=(
+"user_arn_1"
+"user_arn_2"
+)
+
+DATASOURCE_IDS=(
+"data_source_id_1"
+"data_source_id_2"
+)

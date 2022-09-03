@@ -80,7 +80,8 @@ class GetDataSetList
 
       if !resp_describe_ds.nil? && !resp_describe_ds_permissions.nil?
         permissioned_namespaces.each do |ns|
-          next if !@namespace.nil?
+          next if !@namespace.nil? && @namespace != ns
+
           @rows << [
             ns,
             ds_id,

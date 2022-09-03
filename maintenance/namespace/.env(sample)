@@ -1,0 +1,6 @@
+AWS_ACCOUNT_ID=<AWS_ACCOUNT_ID>
+
+NAMESPACES=(
+"namespace_1"
+"namespace_2"
+)

@@ -54,7 +54,6 @@ class GetAnalysisTree
   end
 
   def describe_analysis_and_belonged_data_sets(analysis_id)
-    puts 'Wait to describe analysis and belonged data sets...'
     resp_describe_analysis = Quicksight::DescribeAnalysis.new(@profile, analysis_id).execute
     @assets[analysis_id][:analysis_name] = resp_describe_analysis["Analysis"]["Name"]
     @data_set_ids = resp_describe_analysis["Analysis"]["DataSetArns"].map { |ds| ds.split("/")[1] }
@@ -72,7 +71,6 @@ class GetAnalysisTree
         @assets[analysis_id][:joined_datasets][ds_id] = data_set_labels
       end
     end
-    puts 'Done to describe analysis and belonged data sets.'
   end
   
   def dist_path

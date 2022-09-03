@@ -1,0 +1,11 @@
+AWS_ACCOUNT_ID=<AWS_ACCOUNT_ID>
+
+USER_ARNS=(
+"user_arn_1"
+"user_arn_2"
+)
+
+DATASET_IDS=(
+"data_set_id_1"
+"data_set_id_2"
+)
