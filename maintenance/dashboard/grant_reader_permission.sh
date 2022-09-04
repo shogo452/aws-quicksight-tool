@@ -20,11 +20,27 @@ while true; do
     esac
 done
 
-for user_arn in "${USER_ARNS[@]}" ; do
-  for dashboard_id in "${DASHBOARD_IDS[@]}" ; do
-    aws quicksight update-dashboard-permissions \
-              --aws-account-id $AWS_ACCOUNT_ID \
-              --dashboard-id ${dashboard_id} \
-              --grant-permissions Principal=${user_arn},,Actions=quicksight:DescribeDashboard,quicksight:ListDashboardVersions,quicksight:QueryDashboard
-  don
-done
+echo 'Please input your profile.'
+echo -n 'PROFILE: '
+read profile
+
+if [ $profile = 'ngydv' ]; then
+  for user_arn in "${USER_ARNS[@]}" ; do
+    for dashboard_id in "${DASHBOARD_IDS[@]}" ; do
+      aws quicksight update-dashboard-permissions \
+                --aws-account-id $AWS_ACCOUNT_ID \
+                --dashboard-id ${dashboard_id} \
+                --grant-permissions Principal=${user_arn},Actions=quicksight:DescribeDashboard,quicksight:ListDashboardVersions,quicksight:QueryDashboard | jq .
+    done
+  done
+else
+  for user_arn in "${USER_ARNS[@]}" ; do
+    for dashboard_id in "${DASHBOARD_IDS[@]}" ; do
+      aws quicksight update-dashboard-permissions \
+                --aws-account-id $AWS_ACCOUNT_ID \
+                --profile $profile
+                --dashboard-id ${dashboard_id} \
+                --grant-permissions Principal=${user_arn},Actions=quicksight:DescribeDashboard,quicksight:ListDashboardVersions,quicksight:QueryDashboard | jq .
+    done
+  done
+fi

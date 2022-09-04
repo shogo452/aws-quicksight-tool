@@ -7,6 +7,7 @@ The following things can be performed with it.
 * Output a CSV listing of QuickSight data sets by namespace, and the spice capacity of each data set
 * Tree-like output of relationships between assets such as dashboards and analyses and datasets
 * Tabular output of import history into SPICE for a single data set
+* Run CLI commands for multiple users and assets via shell scipts.
 
 ## Prerequisites and Preparation
 
@@ -18,30 +19,37 @@ The following things can be performed with it.
 
 ### Setting Environment Variables
 
-* To Set [named profiles for the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html)
-* To set your AWS account credentials in environment variables.
+#### General
 
-  ```txt
-  vim ~/.zshrc
-  ```
+* To Set [named profiles for the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html)
+
+#### Settings For Using Command in `/cmd`
+
+* To set your AWS account credentials in environment variables.
 
   ```
   # ~/.zshrc
   export QS_TOOL_AWS_ACCOUNT_ID={AWS_ACCOUNT_ID}
   ```
 
-  ```txt
-  source ~/.zshrc
-  ```
+#### Setting For Using Shell Scripts in `/maintenance`
   
-  ```txt
-  touch .env
-  vim .env
+* To create .env file like the sample .env file.
+* To specify AWS account credentials and required target resource name as arguments. (ex. user-arn, namespace, dashboard-id, analysis-id, and data-set-id)
+
   ```
-  
-  ```
-  # .env
-  AWS_ACCOUNT_ID={AWS_ACCOUNT_ID}
+  # /maintenance/anaylsis/.env
+  AWS_ACCOUNT_ID=<AWS_ACCOUNT_ID>
+
+  USER_ARNS=(
+  "user_arn_1"
+  "user_arn_2"
+  )
+
+  ANALYSES_IDS=(
+  "analysis_id_1"
+  "analysis_id_2"
+  )
   ```
 
 ### Applying an own naming rules
@@ -222,4 +230,22 @@ cmd/get_ingestion_history --profile=<profile> --dataset-id=<dataset_id>
 
 ```txt
 cmd/get_ingestion_history --profile=<profile> --dataset-id=<dataset_id> --limit=<number>
+```
+
+## Usage : Shell scripts of maintenance users and assets
+
+### Command
+
+```txt
+$ maintenance/analysis/grant_author_permission.sh
+========================================== Users ==============================================
+user_arn_1
+user_arn_2
+========================================== Analyses ===========================================
+analysis_id_1
+analysis_id_2
+===============================================================================================
+Do you wish to grant author permissions to the users for the analyses? (y/n): y
+Please input your profile.
+PROFILE: <profile>
 ```

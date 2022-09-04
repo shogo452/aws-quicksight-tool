@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# To create .dev and describe AWS_ACCOUNT_ID, ANALYSIS_IDS.
+# To create .env and describe AWS_ACCOUNT_ID, ANALYSES_IDS.
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
 source $SCRIPT_DIR/.env
 
 IFS=$'\n'
-echo "========================================== Analysis ==========================================="
-echo "${ANALYSIS_IDS[@]}"
+echo "========================================== Analyses ==========================================="
+echo "${ANALYSES_IDS[@]}"
 echo "==============================================================================================="
 
 while true; do
@@ -18,8 +18,21 @@ while true; do
     esac
 done
 
-for analysis_id in "${ANALYSIS_IDS[@]}" ; do
-    aws quicksight delete-analysis \
-    --aws-account-id $AWS_ACCOUNT_ID \
-    --analysis-id "${analysis_id}" | jq .
-done
+echo 'Please input your profile.'
+echo -n 'PROFILE: '
+read profile
+
+if [ $profile = 'ngydv' ]; then
+    for analysis_id in "${ANALYSES_IDS[@]}" ; do
+        aws quicksight delete-analysis \
+        --aws-account-id $AWS_ACCOUNT_ID \
+        --analysis-id "${analysis_id}" | jq .
+    done
+else
+    for analysis_id in "${ANALYSES_IDS[@]}" ; do
+        aws quicksight delete-analysis \
+        --aws-account-id $AWS_ACCOUNT_ID \
+        --profile $profile
+        --analysis-id "${analysis_id}" | jq .
+    done
+fi

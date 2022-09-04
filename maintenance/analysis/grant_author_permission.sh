@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# To create .dev and describe AWS_ACCOUNT_ID, USER_ARNS, ANALYSIS_IDS.
+# To create .env and describe AWS_ACCOUNT_ID, USER_ARNS, ANALYSES_IDS.
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
 source $SCRIPT_DIR/.env
 
 IFS=$'\n'
 echo "========================================== Users =============================================="
-echo "${USER_ARNS[@]}"
-echo "========================================== Analysis ==========================================="
-echo "${ANALYSIS_IDS[@]}"
+echo "${USER_ARNS[*]}"
+echo "========================================== Analyses ==========================================="
+echo "${ANALYSES_IDS[*]}"
 echo "==============================================================================================="
 
 while true; do
@@ -20,11 +20,27 @@ while true; do
     esac
 done
 
-for user_arn in "${USER_ARNS[@]}" ; do
-  for analysis_id in "${ANALYSIS_IDS[@]}" ; do
-    aws quicksight update-analysis-permissions \
-              --aws-account-id $AWS_ACCOUNT_ID \
-              --analysis-id ${analysis_id} \
-              --grant-permissions Principal=${user_arn},Actions=quicksight:RestoreAnalysis,quicksight:UpdateAnalysisPermissions,quicksight:DeleteAnalysis,quicksight:QueryAnalysis,quicksight:DescribeAnalysisPermissions,quicksight:DescribeAnalysis,quicksight:UpdateAnalysis
+echo 'Please input your profile.'
+echo -n 'PROFILE: '
+read profile
+
+if [ $profile = 'ngydv' ]; then
+  for user_arn in "${USER_ARNS[@]}" ; do
+    for analysis_id in "${ANALYSES_IDS[@]}" ; do
+      aws quicksight update-analysis-permissions \
+                --aws-account-id $AWS_ACCOUNT_ID \
+                --analysis-id ${analysis_id} \
+                --grant-permissions Principal=${user_arn},Actions=quicksight:RestoreAnalysis,quicksight:UpdateAnalysisPermissions,quicksight:DeleteAnalysis,quicksight:QueryAnalysis,quicksight:DescribeAnalysisPermissions,quicksight:DescribeAnalysis,quicksight:UpdateAnalysis | jq .
+    done
   done
-done
+else
+  for user_arn in "${USER_ARNS[@]}" ; do
+    for analysis_id in "${ANALYSES_IDS[@]}" ; do
+      aws quicksight update-analysis-permissions \
+                --aws-account-id $AWS_ACCOUNT_ID \
+                --profile $profile \
+                --analysis-id ${analysis_id} \
+                --grant-permissions Principal=${user_arn},Actions=quicksight:RestoreAnalysis,quicksight:UpdateAnalysisPermissions,quicksight:DeleteAnalysis,quicksight:QueryAnalysis,quicksight:DescribeAnalysisPermissions,quicksight:DescribeAnalysis,quicksight:UpdateAnalysis | jq .
+    done
+  done
+fi
