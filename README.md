@@ -7,7 +7,7 @@ The following things can be performed with it.
 * Output a CSV listing of QuickSight data sets by namespace, and the spice capacity of each data set
 * Tree-like output of relationships between assets such as dashboards and analyses and datasets
 * Tabular output of import history into SPICE for a single data set
-* Run CLI commands for multiple users and assets via shell scipts.
+* Run CLI commands to maintain multiple namespaces and assets via shell scipts.
 
 ## Prerequisites and Preparation
 
@@ -232,7 +232,30 @@ cmd/get_ingestion_history --profile=<profile> --dataset-id=<dataset_id>
 cmd/get_ingestion_history --profile=<profile> --dataset-id=<dataset_id> --limit=<number>
 ```
 
-## Usage : Shell scripts of maintenance users and assets
+## Usage : Shell scripts to maintain multiple namespaces and assets
+
+### Scripts
+
+The currently created script is below.
+
+```txt
+maintenance
+├── analysis
+│   ├── delete_analyses.sh
+│   ├── grant_author_permission.sh
+│   └── revoke_author_permission.sh
+├── dashboard
+│   ├── grant_reader_permission.sh
+│   └── revoke_reader_permission.sh
+├── dataset
+│   ├── delete_data_sets.sh
+│   ├── grant_author_permissions.sh
+│   └── revoke_author_permissions.sh
+├── datasource
+│   └── delete_data_souces.sh
+└── namespace
+     └── delete_namespaces.sh
+```
 
 ### Command
 
