@@ -7,6 +7,9 @@ source $SCRIPT_DIR/.env
 IFS=$'\n'
 echo "============ Namespaces ============"
 echo "${NAMESPACES[@]}"
+for namespace in "${NAMESPACES[@]}" ; do
+    echo "${namespace}"
+done
 echo "===================================="
 
 while true; do

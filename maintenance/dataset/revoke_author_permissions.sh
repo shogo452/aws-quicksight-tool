@@ -6,9 +6,13 @@ source $SCRIPT_DIR/.env
 
 IFS=$'\n'
 echo "========================================== Users =============================================="
-echo "${USER_ARNS[@]}"
+for user_arn in "${USER_ARNS[@]}" ; do
+  echo "${user_arn}"
+done
 echo "========================================== Datasets ==========================================="
-echo "${DATASET_IDS[@]}"
+for data_set_id in "${DATASET_IDS[@]}" ; do
+  echo "${data_set_id}"
+done
 echo "==============================================================================================="
 
 while true; do
@@ -25,8 +29,8 @@ echo -n 'PROFILE: '
 read profile
 
 if [ $profile = 'ngydv' ]; then
-  for user_arn in "${USER_ARNS[@]}" do
-    for data_set_id in "${DATASET_IDS[@]}" do
+  for user_arn in "${USER_ARNS[@]}" ; do
+    for data_set_id in "${DATASET_IDS[@]}" ; do
       aws quicksight update-data-set-permissions \
                 --aws-account-id $AWS_ACCOUNT_ID \
                 --data-set-id "${data_set_id}" \
@@ -34,8 +38,8 @@ if [ $profile = 'ngydv' ]; then
     done
   done
 else
-  for user_arn in "${USER_ARNS[@]}" do
-    for data_set_id in "${DATASET_IDS[@]}" do
+  for user_arn in "${USER_ARNS[@]}" ; do
+    for data_set_id in "${DATASET_IDS[@]}" ; do
       aws quicksight update-data-set-permissions \
                 --aws-account-id $AWS_ACCOUNT_ID \
                 --profile $profile \

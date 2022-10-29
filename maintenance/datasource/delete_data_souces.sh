@@ -6,7 +6,9 @@ source $SCRIPT_DIR/.env
 
 IFS=$'\n'
 echo "========================================== Datasources ==========================================="
-echo "${DATASOURCE_IDS[@]}"
+for data_source_id in "${DATASOURCE_IDS[@]}" ; do
+    echo "${data_source_id}"
+done
 echo "==============================================================================================="
 
 while true; do

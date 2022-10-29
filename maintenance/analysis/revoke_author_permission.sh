@@ -6,9 +6,13 @@ source $SCRIPT_DIR/.env
 
 IFS=$'\n'
 echo "========================================== Users =============================================="
-echo "${USER_ARNS[@]}"
+for user_arn in "${USER_ARNS[@]}" ; do
+  echo "${user_arn}"
+done
 echo "========================================== Analyses ==========================================="
-echo "${ANALYSES_IDS[@]}"
+for analysis_id in "${ANALYSES_IDS[@]}" ; do
+  echo "${analysis_id}"
+done
 echo "==============================================================================================="
 
 while true; do
