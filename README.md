@@ -249,10 +249,13 @@ maintenance
 │   └── revoke_reader_permission.sh
 ├── dataset
 │   ├── delete_data_sets.sh
+│   ├── downgrade_permissions.sh
 │   ├── grant_author_permissions.sh
 │   └── revoke_author_permissions.sh
 ├── datasource
 │   └── delete_data_souces.sh
+│   ├── grant_author_permissions.sh
+│   └── revoke_author_permissions.sh
 └── namespace
      └── delete_namespaces.sh
 ```
