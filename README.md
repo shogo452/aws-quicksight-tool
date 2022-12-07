@@ -257,7 +257,7 @@ maintenance
 │   ├── grant_author_permissions.sh
 │   └── revoke_author_permissions.sh
 └── namespace
-     └── delete_namespaces.sh
+    └── delete_namespaces.sh
 ```
 
 ### Command
