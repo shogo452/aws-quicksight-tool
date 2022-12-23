@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# To create .dev and describe AWS_ACCOUNT_ID, USER_ARNS, DATASET_IDS.
+# To create .dev and describe AWS_ACCOUNT_ID, USER_ARNS, DATASOURCE_IDS.
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
 source $SCRIPT_DIR/.env
 
@@ -30,21 +30,21 @@ read profile
 
 if [ $profile = 'ngydv' ]; then
   for user_arn in "${USER_ARNS[@]}" ; do
-    for data_set_id in "${DATASOURCE_IDS[@]}" ; do
+    for data_source_id in "${DATASOURCE_IDS[@]}" ; do
       aws quicksight update-data-source-permissions \
                 --aws-account-id $AWS_ACCOUNT_ID \
                 --data-source-id "${data_source_id}" \
-                --grant-permissions Principal=${user_arn},Actions=quicksight:UpdateDataSourcePermissions,quicksight:DescribeDataSourcePermissions,quicksight:PassDataSource,quicksight:DescribeDataSource,quicksight:DeleteDataSource,quicksight:UpdateDataSource | jq .
+                --grant-permissions Principal=${user_arn},Actions=quicksight:DescribeDataSource,quicksight:DescribeDataSourcePermissions,quicksight:PassDataSource,quicksight:UpdateDataSource,quicksight:DeleteDataSource,quicksight:UpdateDataSourcePermissions | jq .
     done
   done
 else
   for user_arn in "${USER_ARNS[@]}" ; do
-    for data_set_id in "${DATASOURCE_IDS[@]}" ; do
+    for data_source_id in "${DATASOURCE_IDS[@]}" ; do
       aws quicksight update-data-source-permissions \
                 --aws-account-id $AWS_ACCOUNT_ID \
                 --profile $profile \
                 --data-source-id "${data_source_id}" \
-                --grant-permissions Principal=${user_arn},Actions=quicksight:UpdateDataSourcePermissions,quicksight:DescribeDataSourcePermissions,quicksight:PassDataSource,quicksight:DescribeDataSource,quicksight:DeleteDataSource,quicksight:UpdateDataSource | jq .
+                --grant-permissions Principal=${user_arn},Actions=quicksight:DescribeDataSource,quicksight:DescribeDataSourcePermissions,quicksight:PassDataSource,quicksight:UpdateDataSource,quicksight:DeleteDataSource,quicksight:UpdateDataSourcePermissions | jq .
     done
   done
 fi
