@@ -5,7 +5,7 @@ USER_ARNS=(
 "user_arn_2"
 )
 
-ANALYSYS_IDS=(
+ANALYSES_IDS=(
 "analysis_id_1"
 "analysis_id_2"
 )
