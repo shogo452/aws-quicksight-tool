@@ -6,7 +6,9 @@ source $SCRIPT_DIR/.env
 
 IFS=$'\n'
 echo "========================================== Datasets ==========================================="
-echo "${DATASET_IDS[@]}"
+for data_set_id in "${DATASET_IDS[@]}" ; do
+    echo "${data_set_id}"
+done
 echo "==============================================================================================="
 
 while true; do
